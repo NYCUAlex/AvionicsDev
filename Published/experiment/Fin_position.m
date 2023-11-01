@@ -1,0 +1,34 @@
+clear
+clc
+close all
+%% description of rocket
+% mass = 260kg, Ix = 0.5kg-m^2, Iy = Iz = 500kg-m^2, total length = 6m
+% diameter = 0.265m
+%% Varying CP postion
+d = 0.265;
+S = 1/4*pi*d^2;
+% rho = 1.2;
+% V = 500;
+% Q = 1/2*rou*V^2;
+% CNnose = 0.5;
+% CPnose = 0.85;
+% CNcanard = 0.5;
+% CPcanard = 1;
+% CNtail = 0.5;
+% CPtail = 5.5;
+CN = 1;
+CG = 3:0.1:5;
+CP = 3.5;
+stability = (CP-CG)/d;
+CMy = stability*CN;
+plot(stability,CMy)
+xlabel("stability")
+ylabel("CMy")
+grid on
+hold on
+%% Same stability with different CG,CP position
+
+%% Large CN with small stability V.S. Large stability with small CN
+
+
+%% Disturbance sensitivity with different CG,CP position and AOA

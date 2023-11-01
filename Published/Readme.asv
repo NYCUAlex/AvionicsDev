@@ -1,0 +1,8 @@
+%% This is a sounding rocket simulator for Asfoloth project
+%% Several process to use this program
+%% edited:2023/04/17 Alex
+
+step0: Open the Main.app
+step1: Select model
+step2: Modify the rocket properties(mass,CG) value
+step3: For saving the properties, click the "File" at left top 

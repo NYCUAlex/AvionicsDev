@@ -1,0 +1,32 @@
+clear
+clc
+%% wind data
+n = 1;
+% namelist = dir('C:\Users\310611102\MATLAB Drive\Published\datcom\analysis_fingeometry\windtable202007_08\*.csv');
+% 
+% % 读取后namelist 的格式为
+% % name -- filename
+% % date -- modification date
+% % bytes -- number of bytes allocated to the file
+% % isdir -- 1 if name is a directory and 0 if not
+% 
+% len = length(namelist);
+% for i = 1:len
+%     data{i}=namelist(i).name;
+%     x= load(data{i});
+% end
+% filename = fprintf("hualien_20200%s%s%s.csv","07","01","00");
+% type(filename)
+for i = 1:62
+    filename = i+".csv";
+    wind = readmatrix(filename);
+    for j = 1:10
+        if wind(j,1)<120
+            north_speed(n,1) = wind(j,2);
+            east_speed(n,1) = wind(j,3);
+            n=n+1;
+            abs_speed = norm([north_speed east_speed],2);
+        end
+        
+    end
+end

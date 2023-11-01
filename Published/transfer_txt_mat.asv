@@ -1,0 +1,22 @@
+clear
+% clc
+close all
+%% type geometry of rocket
+XLEcanard=[90.9,104.756];
+SSPANcanard=[13.25,21.25];
+CHORDcanard=[14.0,2.0];
+SWEEPcanard=13.06;
+XLEtail=[470.6,502.6];
+SSPANtail=[13.25,45.25];
+CHORDtail=[65.0,20.0];
+SWEEPtail=-22.11;
+callc
+CLPTail = clp_cc()
+%     clpt_1000 = coe_1000(50,2:12);
+%     cl_phi1000 = coe_1000(52:60,2:12);
+%     xcp_c1000 = coe_1000(62:70,2:12);
+%     clpc_1000 = coe_1000(72,2:12);
+%     cmad_1000 = coe_1000(74,2:12);
+%     cna_1000 = coe_1000(76:84,2:12);
+%     cma_1000 = coe_1000(86:94,2:12);
+%     xcp_t1000 = coe_1000(96:104,2:12);

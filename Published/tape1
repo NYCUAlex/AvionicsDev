@@ -1,0 +1,58 @@
+CASEID * INPUT is Checked and Created automatically by OLC, Form-Designed by YJP
+SOSE                                                                            
+DIM CM                                                                          
+DAMP                                                                            
+DERIV RAD                                                                       
+ $FLTCON ALT=1000.0,NMACH=11.0,NALPHA=9.0,                                      
+         MACH=0.01,0.3,0.5,0.7,0.9,1.0,1.1,1.3,1.5,1.8,2.0,                     
+         ALPHA=0.00000001,0.1,0.3,0.5,1.0,2.0,3.0,4.0,5.0,                      
+         PHI=0.000000,                                                          
+ $END                                                                           
+ $REFQ SREF=551.545,LREF=26.5,XCG=0.000000,ZCG=0.0,                             
+       ROUGH=0.000406,SCALE=1.0,BLAYER=0.0,                                     
+ $END                                                                           
+ $AXIBOD X0=0.0,                                                                
+         TNOSE=1.0,                                                             
+         LNOSE=100.0,                                                           
+         DNOSE=26.5,                                                            
+         LCENTR=537.5,                                                          
+         DCENTR=26.5,                                                           
+         LAFT=8.8,                                                              
+         DAFT=19.6,                                                             
+         DEXIT=0.0,                                                             
+ $END                                                                           
+ $FINSET1 SECTYP=3.0,NPANEL=4.0,                                                
+          XLE=162.700000,172.700000,                                            
+          SSPAN=13.250000,21.250000,                                            
+          CHORD=14.000000,2.144228,                                             
+          STA=1.0,                                                              
+          SWEEP=-13.060000,                                                     
+          LER=0.005,0.005,                                                      
+          XCORD=0.0,0.2,0.99,1.0,                                               
+          MEAN=0.0, 0.0, 0.0, 0.0,                                              
+          THICK=0.0, 0.06,0.06, 0.0,                                            
+          PHIF= 45.0,135.0,225.0,315.0,                                         
+ $END                                                                           
+ $FINSET2 SECTYP=3.0,NPANEL=4.0,                                                
+          XLE=566.400000,601.600000,                                            
+          SSPAN=13.250000,45.250000,                                            
+          CHORD=70.000000,21.871161,                                            
+          STA=1.0,                                                              
+          SWEEP=-22.000000,                                                     
+          LER=0.005,0.005,                                                      
+          XCORD=0.0,0.2,0.99,1.0,                                               
+          MEAN=0.0, 0.0, 0.0, 0.0,                                              
+          THICK=0.0, 0.013,0.013, 0.0,                                          
+          PHIF= 45.0,135.0,225.0,315.0,                                         
+ $END                                                                           
+ $DEFLCT                                                                        
+          DELTA1=  0.000000,  0.000000,  0.000000,  0.000000,                   
+          DELTA2=  0.000000,  0.000000,  0.000000,  0.000000,                   
+          XHINGE=0.0,0.0,                                                       
+          SKEW=0.0, 0.0,                                                        
+ $END                                                                           
+BUILD                                                                           
+PART                                                                            
+SAVE                                                                            
+DAMP                                                                            
+NEXT CASE                                                                       

@@ -1,0 +1,522 @@
+clear all;
+close all;
+clc
+%sampling time 
+ts = 0.01;
+%stop time 
+stopt = 120;
+global g d S stage mis_angle
+stage = 0;
+%0=on ground
+% error_1 = 1000;
+for i = 1:1
+    %% initial condition
+    %initial NED position(m)(z must be negative!!!)
+    x0=0;
+    y0=0;
+    z0=-1.7;%total length-XCG org=-3 highreg=-1.7
+    %initial NED velocity(m/s)
+    vx0=0;
+    vy0=0;
+    vz0=0;
+    %initial body velocity(m/s)
+    u0=0;
+    v0=0;
+    w0=0;
+    %initial angular velocity(rad/s)
+    p0=0;
+    q0=0;
+    r0=0;
+    %initial attitude(degree),rotation sequence is psi-theta-phi
+    phid0=0;
+    thetad0=85;
+    psid0=90;
+    phi0 = phid0*pi/180;
+    theta0 = thetad0*pi/180;
+    psi0 = psid0*pi/180;
+    e00=cos(0.5*phi0)*cos(0.5*theta0)*cos(0.5*psi0)+sin(0.5*phi0)*sin(0.5*theta0)*sin(0.5*psi0);
+    ex0=sin(0.5*phi0)*cos(0.5*theta0)*cos(0.5*psi0)-cos(0.5*phi0)*sin(0.5*theta0)*sin(0.5*psi0);
+    ey0=cos(0.5*phi0)*sin(0.5*theta0)*cos(0.5*psi0)+sin(0.5*phi0)*cos(0.5*theta0)*sin(0.5*psi0);
+    ez0=cos(0.5*phi0)*cos(0.5*theta0)*sin(0.5*psi0)-sin(0.5*phi0)*sin(0.5*theta0)*cos(0.5*psi0);
+    %% launch rail distance
+%     len = 17;%ft
+    rail_len = 13;%m   len*12*2.54/100
+    %% rocket properties
+    %canard geometry
+%     Cr_t = 0.63;%root chord of tail
+%     Ct_t = 0.16;%tip chord of tail
+%     c = 2/3*(Cr_t+Ct_t-Cr_t*Ct_t/(Cr_t+Ct_t));%MAC of tail
+    %reference diameter(m),area(m^2)
+    d = 265/1000;
+    S = 1/4*pi*d^2;
+    %gravity(m/s^2)
+    g = 9.81;
+    %misalignment angle
+    mis_angle = 0.1*pi/180;
+    PHIW = 0.0;
+    XCG = 0.0;
+
+%     XLEcanard=[90.9+50*rand(1),90.9+50*rand(1)];
+    XLEcanard=[162.7,167.7];
+    SSPANcanard=[13.25,23.25];
+%     SSPANcanard=[13.25,16.25+rand(1)*12];%
+%     chord2 = 5+rand(1)*45;
+%     CHORDcanard=[chord2,chord2*rand(1)];
+    SWEEPcanard=-10.0;
+    Cr_canard = 10.0;
+    Ct_canard = XLEcanard(1)+Cr_canard+(SSPANcanard(2)-SSPANcanard(1))*tand(SWEEPcanard)-XLEcanard(2);
+    CHORDcanard=[Cr_canard,Ct_canard];
+%     Xtail1 = 480.0;%
+%     Xtail2 = Xtail1 + 60*rand(1);%
+%     XLEtail=[Xtail1,Xtail2];
+    XLEtail=[566.4,601.6];
+%     SSPANtail=[13.25,13.25+(SSPANcanard(2)-13.25)/0.43];
+    SSPANtail=[13.25,38.25+rand(1)*20];%
+%     SSPANtail=[13.25,48.25];
+%     chord1 = 60.0 + rand(1)*40;
+%     CHORDtail=[70.0,20.0];
+    SWEEPtail=-22.0;%-40+80*rand(1)
+    Cr_tail = 70.0;%60.0+rand(1)*40
+    Ct_tail = XLEtail(1)+Cr_tail+(SSPANtail(2)-SSPANtail(1))*tand(SWEEPtail)-XLEtail(2);
+    CHORDtail=[Cr_tail,Ct_tail];
+    DELTAcanard = [0.0 0.0 0.0 0.0];
+    DELTAtail = [0.0 0.0 0.0 0.0];
+    c = 2/3*(CHORDtail(1)+CHORDtail(2)-CHORDtail(1)*CHORDtail(2)/(CHORDtail(1)+CHORDtail(2)));%MAC of tail
+    try
+        [Mach,AOA,CN,CM,CA,CLL,CNA,CMA,XCP,CNQ,CMQ,CABASE,XCPcanard,XCPtail] = datcomcoef(PHIW,XCG,XLEcanard,SSPANcanard, ...
+            CHORDcanard,SWEEPcanard,XLEtail,SSPANtail,CHORDtail,SWEEPtail, ...
+            DELTAcanard,DELTAtail);
+    catch
+        sprintf('geometry fail')
+        continue
+    end
+    Minter = Mach;
+    atkinter = AOA;
+    cn1000 = CN;
+    caoff1000 = CA;
+    caon1000 = CA-0.36*CABASE;
+    xcp1000 = XCP;
+    xcp_t1000 = XCPtail;
+    xcp_c1000 = XCPcanard;
+    XCG = 349.0;
+    [Mach,AOA,CN,CM,CA,CLL,CNA,CMA,XCP,CNQ,CMQ,CABASE,XCPcanard,XCPtail] = datcomcoef(PHIW,XCG,XLEcanard,SSPANcanard, ...
+        CHORDcanard,SWEEPcanard,XLEtail,SSPANtail,CHORDtail,SWEEPtail, ...
+        DELTAcanard,DELTAtail);
+    cnq1000 = CNQ;
+    cmq1000 = CMQ;
+    cna_1000 = CNA;
+    cma_1000 = CMA;
+    DELTAcanard = [5.73,5.73,-5.73,-5.73];% pitch control
+    [Mach,AOA,CN,CM,CA,CLL,CNA,CMA,XCP,CNQ,CMQ,CABASE,XCPcanard,XCPtail] = datcomcoef(PHIW,XCG,XLEcanard,SSPANcanard, ...
+        CHORDcanard,SWEEPcanard,XLEtail,SSPANtail,CHORDtail,SWEEPtail, ...
+        DELTAcanard,DELTAtail);
+    XCG = 0.0;
+    cndq1000 = CM(1,:)/1*10;
+    DELTAcanard = [5.73,5.73,5.73,5.73];% roll control
+    [Mach,AOA,CN,CM,CA,CLL,CNA,CMA,XCP,CNQ,CMQ,CABASE,XCPcanard,XCPtail] = datcomcoef(PHIW,XCG,XLEcanard,SSPANcanard, ...
+        CHORDcanard,SWEEPcanard,XLEtail,SSPANtail,CHORDtail,SWEEPtail, ...
+        DELTAcanard,DELTAtail);
+    DELTAcanard = [0.0 0.0 0.0 0.0];
+    cldp1000 = CLL(1,:)*10;
+    DELTAtail = [5.73,5.73,5.73,5.73];% misalignment
+    [Mach,AOA,CN,CM,CA,CLL,CNA,CMA,XCP,CNQ,CMQ,CABASE,XCPcanard,XCPtail] = datcomcoef(PHIW,XCG,XLEcanard,SSPANcanard, ...
+        CHORDcanard,SWEEPcanard,XLEtail,SSPANtail,CHORDtail,SWEEPtail, ...
+        DELTAcanard,DELTAtail);
+    DELTAtail = [0.0 0.0 0.0 0.0];
+    cldpt1000 = CLL(1,:)*10;
+    Mach(find(Mach==1)) = 1.01;
+    clpt_1000 = clp_cc(Mach,CHORDtail(1)/100,CHORDtail(2)/100,(SSPANtail(2)-SSPANtail(1))/100);
+    clpc_1000 = clp_cc(Mach,CHORDcanard(1)/100,CHORDcanard(2)/100,(SSPANcanard(2)-SSPANcanard(1))/100);
+    PHIW = 22.5;
+    [Mach,AOA,CN,CM,CA,CLL,CNA,CMA,XCP,CNQ,CMQ,CABASE,XCPcanard,XCPtail] = datcomcoef(PHIW,XCG,XLEcanard,SSPANcanard, ...
+        CHORDcanard,SWEEPcanard,XLEtail,SSPANtail,CHORDtail,SWEEPtail, ...
+        DELTAcanard,DELTAtail);
+    PHIW = 0.0;
+    cl_phi1000 = CLL;
+    cmad_1000 = zeros(1,11);
+    [Mach,AOA,CN,CM,CA,CLL,CNA,CMA,XCP,CNQ,CMQ,CABASE,XCPcanard,XCPtail] = datcomcoef(PHIW,XCG,XLEcanard,SSPANcanard, ...
+        CHORDcanard,SWEEPcanard,XLEtail,SSPANtail,CHORDtail,SWEEPtail, ...
+        DELTAcanard,DELTAtail);
+%     coe_1000 = readmatrix('./datcom/rocketcoef/Asfaloth_ver2.xlsx','Range','A1:L104');
+%     Minter = coe_1000(1,2:12);
+%     atkinter = coe_1000(2:10,1);
+%     cn1000 = coe_1000(2:10,2:12);
+%     caoff1000 = coe_1000(12:20,2:12);
+%     caon1000 = coe_1000(22:30,2:12);
+%     xcp1000 = coe_1000(32:40,2:12);
+%     cnq1000 = coe_1000(42,2:12);
+%     cmq1000 = coe_1000(44,2:12);
+%     cndq1000 = coe_1000(46,2:12);
+%     cldp1000 = coe_1000(48,2:12);
+%     clpt_1000 = coe_1000(50,2:12);
+%     cl_phi1000 = coe_1000(52:60,2:12);
+%     xcp_c1000 = coe_1000(62:70,2:12);
+%     clpc_1000 = coe_1000(72,2:12);
+%     cmad_1000 = coe_1000(74,2:12);
+%     cna_1000 = coe_1000(76:84,2:12);
+%     cma_1000 = coe_1000(86:94,2:12);
+%     xcp_t1000 = coe_1000(96:104,2:12);
+
+    
+    %% wind property
+    wind = readmatrix('./wind table/wind_table/hualien_2020073112.csv','Range','A:C');
+    wind(1,:) = [];
+    wind_h = wind(:,1);
+    wind_north = wind(:,2);
+    wind_east = wind(:,3);
+    wind_on = 0;
+    turb_on = 0;
+    
+%     Mach2 = [0.71 1 1]
+%     distur = [-20 -20 0];
+    %% controller parameters
+    % K = 1;                   %%%proportional gain
+    % alpha = 0.0921;             %%%
+    % tou = 1.3675;               %%%
+    K1 = 4.3;%
+    K2 = 0.2;%
+    K3 = 0.3;%
+    KP = 2;%10*rand(1)
+    wg = 2;%rand(1)*8
+    tou1 = 5/wg;%10/wg
+    phi_m = 30;%50*rand(1)
+    wm =5;% 8*rand(1)
+    beta = 15;%20*rand(1)
+    afa = (1-sind(phi_m))/(1+sind(phi_m));
+    tou2 = 1/wm*sqrt(1/afa);
+    roll_control_on = 0;
+    if i == 1
+        pitch_control_on = 0;
+    else
+        pitch_control_on = 0;
+    end
+    %% motor parameter
+    BW_HZ = 100;%hz
+    BW = BW_HZ*2*pi;%rad/s
+    damp = 0.9;
+    wn = BW/sqrt(1-2*damp^2+sqrt(2-4*damp^2+4*damp^4));%rad/s
+    %% simulation
+    simout = sim('model_6dof.slx');%
+    %% record fin geometry
+    Cr_c(i,1:2) = CHORDcanard;
+    SP_c(i) = SSPANcanard(2)-13.25;
+    Xle_c(i,1:2) = XLEcanard;
+    Cr_t(i,1:2) = CHORDtail;
+    SP_t(i) = SSPANtail(2)-13.25;
+    Xle_t(i,1:2) = XLEtail;
+    ratio(i) = SP_c(i)/SP_t(i);
+    
+    %% plot AOA v.s. time
+    t = simout.mass_property.time(:,1);
+    Xcg = simout.mass_property.signals.values(:,2);
+    Xcp = simout.aeroCoef(:,7)*d;
+    caliber(i) = min((Xcp-Xcg)/d);
+    if caliber<0
+        continue;
+    end
+%     Mach_plot = simout.air(2,:);
+%     thetad = simout.vstate(21,1:length(t));
+% %     Ze = simout.vstate(12,1:length(t));
+% %     [maxh,tmaxh] = max(Ze);
+%     AOA_plot = simout.air(12,:);
+%     
+%     tsteady = t(max(max(find(AOA_plot>0.25)),max(find(AOA_plot<-0.25))))-8;
+
+%     M_roll = simout.Moment(:,3);
+%     max_m_roll = max(M_roll)
+
+%     if t>
+%     error = mean(AOA_plot);
+%     if abs(error) < error_1
+%         error_1 = error
+%         KPbst = KP;
+%         tou1bst = tou1;
+%         phi_mbest = phi_m;
+%         wmbst = wm;
+%         betabst = beta;
+%     end
+%     M0_7 = find(Mach_plot>0.7);
+%     tM0_7 = t(M0_7(1));
+    if i == 1
+        figure("NumberTitle","off","Name","span ratio vs stability")
+    end
+    try
+%         plot(SP_t(i)-13.25,max_m_roll,'.')
+%         plot(t,Xcg)
+        plot(ratio(i),caliber(i),'.')
+    catch
+        continue;
+    end
+%     plot(t,AOA_plot,'LineWidth',1,'DisplayName',sprintf('XLE=%f Cr=%f Ct=%f',XLEtail(2),CHORDtail));
+    hold on
+    grid on
+    xlabel('span ratio')
+    ylabel('stability')
+%     ylabel('Angle of attack(degree)')
+%     axis([tM0_7 tM0_7+10 min(AOA_plot)-1 max(AOA_plot)+1])
+end
+%% data mining
+% t = simout.mass_property.time(:,1);
+% section_num = 1;
+% 
+% mass = simout.mass_property.signals.values(:,1);
+% Xcg = simout.mass_property.signals.values(:,2);
+% 
+% Xe = simout.vstate(10,1:section_num:length(t));
+% Ye = simout.vstate(11,1:section_num:length(t));
+% Ze = simout.vstate(12,1:section_num:length(t));
+% 
+% % % % e0 = simout.attitude(1:section_num:length(t),1);
+% % % % ex = simout.attitude(1:section_num:length(t),2);
+% % % % ey = simout.attitude(1:section_num:length(t),3);
+% % % % ez = simout.attitude(1:section_num:length(t),4);
+% 
+% p = simout.vstate(13,1:section_num:length(t))/(2*pi);
+% q = simout.vstate(14,1:section_num:length(t))/(2*pi);
+% r = simout.vstate(15,1:section_num:length(t))/(2*pi);
+% 
+% phid = simout.vstate(20,1:section_num:length(t));
+% thetad = simout.vstate(21,1:section_num:length(t));
+% psid = simout.vstate(22,1:section_num:length(t));
+% 
+% % % % FA = simout.aerofm(1:length(t),1);
+% % % % My = simout.aerofm(1:length(t),2);
+% 
+% Mach = simout.air(2,:);
+% Q = simout.air(3,:);
+% AOA = simout.air(12,:);
+% AOS = simout.air(13,:);
+% AOA_t = simout.air(14,:);
+% phi_w = simout.air(15,:);
+% % 
+% % wind_north = simout.air(6,:);
+% % wind_east = simout.air(7,:);
+% % gust_north = simout.air(9,:);
+% % gust_east = simout.air(10,:);
+% % distur_north = wind_north+gust_north;
+% % distur_east = wind_east+gust_east;
+% % 
+% 
+% Xcp = simout.aeroCoef(:,7)*d;
+% caliber = (Xcp-Xcg)/d;
+% [maxh,tmaxh] = max(Ze);
+
+
+
+%plot
+plot_on = 0;
+while(plot_on)
+    %% plot 
+    % plot mass
+    figure("NumberTitle","off","Name","Mass")
+    plot(t,mass,'Color','#00008b','LineWidth',2);
+    grid on
+    hold on
+    xlabel('t(s)')
+    ylabel('mass(kg)')
+    
+    %plot CG.CP.stability
+    figure("NumberTitle","off","Name","CG,CP")
+    plot(t,Xcp,'Color','#006400','LineWidth',3)
+    hold on 
+    grid on
+    xlabel('t(s)')
+    ylabel('distance from nose(m)')
+    axis([0 t(tmaxh) min(Xcg)-1 max(Xcp)+1])
+    plot(t,Xcg,'Color','#00008b','LineWidth',3)
+    % plot(oprk_t,oprk_xcp/100,'Color','green','LineWidth',2)
+    % plot(oprk_t,oprk_xcg/100,'Color','cyan','LineWidth',2)
+    legend('cal xcp','cal xcg')
+    
+    figure("NumberTitle","off","Name","Stability")
+    plot(t,caliber,'Color','#006400','LineWidth',3)
+    hold on 
+    grid on
+    xlabel('t(s)')
+    ylabel('caliber')
+    % axis([0 t(tmaxh) min(caliber)-1 max(ORK_caliber)+1])
+    % plot(oprk_t,ORK_caliber,'Color','green','LineWidth',2)
+    legend('6dof caliber')
+    
+    % plot 2D trajectory
+    figure("NumberTitle","off","Name","Position")
+    plot(t,Xe,'Color','#006400','LineWidth',2)
+    % hold on
+    % grid on
+    % % plot(t,Ye)
+    plot(t,Ze,'Color','#006400','LineWidth',3)%'#00008b'
+    grid on
+    hold on
+    % plot(oprk_t,oprk_x,'Color','green','LineWidth',2)
+    % % plot(oprk_t,oprk_y)
+    % plot(oprk_t,oprk_z,'Color','green','LineWidth',2)%'cyan'
+    xlabel('t(s)')
+    ylabel('h(m)')
+    % ylabel('displacement(m)')
+    axis([0 t(tmaxh) 0 max(maxh)+1000])
+    % legend('cal h','ORK h')
+    % % 
+    % % plot 3D trajectory+attitude
+    % figure
+    % plot3(Xe,Ye,Ze)
+    % % axis([-100 10 -0.2 1 0 20000])
+    % xlabel('x(m)')
+    % ylabel('y(m)')
+    % zlabel('z(m)')
+    % grid on
+    % hold on
+    % % % axis equal
+    % % % text(0.183,0, 10,'\leftarrow t=1.4,lift off','Color','red');
+    % % % text(123,0, 700,'\leftarrow t=7,exp start','Color','red');
+    % % % % text(123,0, 1000,'AOA control','Color','red','FontSize',20);
+    % % % text(383,0, 1792,'\uparrow t=10.9,exp end','Color','red');
+    % % % % text(1200,0, 6000,'attitude control','Color','red','FontSize',20);
+    % % % text(6834,0, 10087,'\uparrow t=52.2,parachute open','Color','red');
+    % % % % % ax = plotTransforms([Xe Ye Ze],[e0 ex ey ez],"FrameSize",20);
+    % % % % plot3(oprk_x,oprk_y,oprk_z)
+    % % % % legend('matlab sim','open rocket')
+    
+    % plot angular velocity
+    figure("NumberTitle","off","Name","angular rate")
+    plot(t,p,'LineWidth',2)
+    grid on 
+    hold on
+    plot(t,q,'LineWidth',2)
+    plot(t,r,'LineWidth',2)
+    xlabel('t(s)')
+    ylabel('angular rate(Hz)')
+    axis([0 t(tmaxh) min(p)-0.01 max(p)+0.01])
+    legend('p','q','r')
+    
+    % plot attitude
+        figure("NumberTitle","off","Name","Euler angle")
+    plot(t,phid,'LineWidth',2)
+    grid on 
+    hold on
+    plot(t,thetad,'LineWidth',2)
+    plot(t,psid,'LineWidth',2)
+    xlabel('t(s)')
+    ylabel('attitude(degree)')
+    axis([0 t(tmaxh) min(phid)-10 max(thetad)+10])
+    legend('phi(roll angle)','theta(pitch angle)','psi(yaw angle)')
+    
+    % plot Mach number
+    figure("NumberTitle","off","Name","Mach")
+    plot(t,Mach,'Color','#006400','LineWidth',3);
+    grid on
+    hold on
+    % plot(oprk_t,oprk_Mach,'Color','green','LineWidth',2)
+    xlabel('t(s)')
+    ylabel('Mach')
+    axis([0 t(tmaxh) 0 max(Mach)+0.5])
+    % legend('6dof Mach','ORK Mach')
+    
+    % plot Q
+    figure("NumberTitle","off","Name","Q")
+    plot(t,Q,'Color','#006400','LineWidth',3);
+    grid on
+    hold on
+    xlabel('t(s)')
+    ylabel('Q')
+    axis([0 t(tmaxh) 0 max(Q)+10000])
+    
+    % plot AOA 
+    figure("NumberTitle","off","Name","AOA")
+    plot(t,AOA_t,'Color','#00008b','LineWidth',2);
+    hold on
+    grid on
+    % plot(oprk_t,oprk_AOA,'Color','cyan','LineWidth',2)
+    xlabel('t(s)')
+    ylabel('Angle of attack(degree)')
+    axis([0 t(tmaxh) min(AOA_t)-1 max(AOA_t)+1])
+    % legend('mycode AOA','simulink module AOA')
+    % legend('6dof AOA','ORK AOA')
+    
+    %plot wind disturbence
+    % figure
+    % plot(t,wind_north,'Color','#00008b','LineWidth',2);
+    % hold on
+    % grid on
+    % plot(t,wind_east,'Color','cyan','LineWidth',2)
+    % xlabel('t(s)')
+    % ylabel('disturbence velocity(m/s)')
+    % axis([0 t(tmaxh) min(wind_east)-5 max(wind_east)+5])
+    % legend('average north velocity','average east velocity')
+    
+    % figure
+    % plot(t,gust_north,'Color','#00008b','LineWidth',2);
+    % hold on
+    % grid on
+    % plot(t,gust_east,'Color','cyan','LineWidth',2)
+    % xlabel('t(s)')
+    % ylabel('disturbence velocity(m/s)')
+    % axis([0 t(tmaxh) min(gust_north)-1 max(gust_north)+1])
+    % legend('gust north velocity','gust east velocity')
+    
+    % figure
+    % plot(t,distur_north,'Color','#00008b','LineWidth',2);
+    % hold on
+    % grid on
+    % plot(t,distur_east,'Color','cyan','LineWidth',2)
+    % xlabel('t(s)')
+    % ylabel('disturbence velocity(m/s)')
+    % axis([0 t(tmaxh) min(distur_east)-5 max(distur_east)+5])
+    % legend('north velocity','east velocity')
+    % % % %plot thrust
+    % % % figure
+    % % % plot(t,thrust)
+    % % % hold on 
+    % % % grid on
+    % % % plot(oprk_t,oprk_thr)
+    % % % xlabel('t(s)')
+    % % % ylabel('thrust(N)')
+    % % % axis([0 65 0 20000])
+    % % % legend('matsim thrust','oprk thrust')
+    % % % text(5.228,3515,'\uparrow liftoff')
+    % % % text(63.58,300,'\downarrow apogee')
+    % 
+    % % % %plot axial force
+    % % % figure
+    % % % plot(t,FA)
+    % % % hold on 
+    % % % grid on
+    % % % plot(oprk_t,oprk_FA)
+    % % % xlabel('t(s)')
+    % % % ylabel('Axial Force(N)')
+    % % % axis([0 65 0 3000])
+    % % % legend('matsim FA','oprk FA')
+    % 
+    % % % %plot pitching moment
+    % % % figure
+    % % % plot(t,My)
+    % % % hold on 
+    % % % grid on
+    % % % plot(oprk_t,oprk_Mm)
+    % % % xlabel('t(s)')
+    % % % ylabel('Pitching moment(N-m)')
+    % % % axis([0 65 0 100])
+    % % % legend('matsim Mm','oprk Mm')
+    
+    
+    
+    
+    
+    % % 
+    % % % %% work of the thrust
+    % % % oprk_data2 = readmatrix('open rocket data/test2.csv','Range','A9:T6485');
+    % % % oprk_t2 = oprk_data2(:,1);
+    % % % oprk_thr2 = oprk_data2(:,6);
+    % % % oprk_h2 = oprk_data2(:,2);
+    % % % for i=1:(6485-9)
+    % % %     Wopth = oprk_thr2.*oprk_h2;
+    % % % end
+    % % % totalWopth = sum(Wopth)
+    % % % ttlWopth = trapz(oprk_t2,oprk_thr2)
+    % % % Wmath = sum(thrust)
+    % % % % Wopth = sum(oprk_thr)
+    % % %% get max height and velocity
+    % % maxvel = max(simout.velocity(1:length(t),1))
+    % % maxh = max(Ze)
+    plot_on = 0;
+end
+% plotDatcomAeroGeometry_221130;

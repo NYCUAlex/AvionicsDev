@@ -1,0 +1,44 @@
+function CLP = clp_cc(MACH,W_RC,W_TC,W_SP)
+%---- PROGRAM CLDAMP
+%----ref.: OpenRocket technical documentation (p.21-39)
+%%%%%%%%%%%%%%%%%%setting config%%%%%%%%%%%%%%%%%%%
+DREF = 0.265; %ref. diameter (m)
+W_RMT = 0.265;%rt, body radius at the fin position
+NMACH = 11; 
+NF  = 4; % fins number 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+NSTRIP = 10; 
+GAM = 1.4;%air specific heat
+OMEGA = 57.3; %57.3 deg/s = 1 rad/s 
+AREF = 1/4*pi*DREF^2;
+D2R = pi/180.0; % degree to rad
+OMEGA  = OMEGA*D2R;
+for i=1:NMACH
+    MINF = MACH(i);
+        if (MINF < 1.0)
+            BETA = sqrt(1.0-MINF*MINF);
+            CNA0 = 2.0*pi/BETA;
+            AA  = ((W_RC + W_TC)/2.0)*W_RMT^2*W_SP ...
+                  + ((W_RC + 2.*W_TC)/3.0)*W_RMT*W_SP^2 ...
+                  + ((W_RC + 3.*W_TC)/12.0)*W_SP^3;
+            CLP(i) = 2.0*NF*CNA0*AA/AREF/DREF;
+        else
+            BETA = sqrt(MINF*MINF -1.);
+            F1   = 2.0/BETA;
+            F2   = (0.25*(GAM+1.)*MINF^4-4.*BETA^2)/BETA^4;
+            F3   = ((GAM+1.)*MINF^8+(2.*GAM^2-7.*GAM-5)*MINF^6 ...
+                   +10.*(GAM+1.)*MINF^4+8)/6./BETA^7;
+            AA   = 0.0;
+            for j = 1:NSTRIP
+                DXI = W_SP/double(NSTRIP);
+                XI  = DXI*(double(j)-0.5)+W_RMT;
+                ET  = OMEGA*XI/(MINF*340.0);
+                CI  = (W_TC - W_RC)/W_SP*(XI-W_RMT)+W_RC;
+                CP  = F1*ET + F2*ET^2 + F3*ET^3;
+                AA  = AA + CP*CI*XI*DXI;         
+            end
+            CLP(i) = 2.0*NF*AA*MINF*340./AREF/DREF^2/OMEGA;
+        end
+end
+CLP = -CLP
+end
